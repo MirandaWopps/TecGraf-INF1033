@@ -1,4 +1,4 @@
-from project_name.foo import foo
+from ImageAnglesAT.foo import foo
 
 
 def test_foo():
