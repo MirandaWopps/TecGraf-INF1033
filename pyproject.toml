@@ -18,7 +18,8 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-
+    "mediapipe>=0.10.21",
+    "opencv-python>=4.11.0.86",
 ]
 
 [project.urls]
