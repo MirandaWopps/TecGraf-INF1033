@@ -60,6 +60,3 @@ def test_should_calculate_knee_angle():
     expected_angle = 143
     tolerance = expected_angle * tolerance_percent
     assert abs(angle - expected_angle) <= tolerance, f"O ângulo do joelho ({angle}) não está dentro da tolerância de {tolerance_percent*100}% de {expected_angle}."
-
-
-    
