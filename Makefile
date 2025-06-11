@@ -27,6 +27,12 @@ clean-build: ## Clean build artifacts
 	@echo "🚀 Removing build artifacts"
 	@uv run python -c "import shutil; import os; shutil.rmtree('dist') if os.path.exists('dist') else None"
 
+.PHONY: run-app
+run-app: ## Test the code with pytest
+	@echo "🚀 Running bike-fit-app"
+	
+	@uv run python src\main_window.py
+
 .PHONY: help
 help:
 	@uv run python -c "import re; \
