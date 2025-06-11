@@ -23,7 +23,7 @@ class MainWindow(QWidget):
             print(f"Arquivo selecionado: {video_path}")
 
             # Chama o videoAnalyse.py passando o caminho do vídeo como argumento
-            subprocess.run(["python", "videoAnalyse.py", video_path])
+            subprocess.run(["uv", "run", "python", "src/videoAnalyse.py", video_path])
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
