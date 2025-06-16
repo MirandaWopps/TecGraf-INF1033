@@ -1,100 +1,115 @@
+#main_window.py
 import sys
+import cv2
+import numpy as np
 from PySide6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel
+    QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QFileDialog, QHBoxLayout
 )
-from PySide6.QtGui import QFont
-from PySide6.QtCore import Qt, QSize
-import subprocess
-import threading
-import cv2  # Você precisa importar cv2 para gravação
+from PySide6.QtGui import QPixmap, QImage
+from PySide6.QtCore import QTimer, Qt
+from videoAnalyse import VideoAnalyzer
 
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("🚴‍♂️ Bike Fit Analyzer 🚴‍♀️")
-        self.setGeometry(500, 200, 400, 400)
+        self.setGeometry(400, 100, 800, 600)
+        self.video_analyzer = None
         self.initUI()
 
     def initUI(self):
         layout = QVBoxLayout()
 
-        title = QLabel("🚴 Bike Fit Analyzer 🚴")
-        title.setFont(QFont("Arial", 20, QFont.Bold))
-        title.setAlignment(Qt.AlignCenter)
-        layout.addWidget(title)
+        self.label_video = QLabel("Nenhum vídeo carregado")
+        self.label_video.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.label_video)
 
-        # Botão de selecionar vídeo
-        btn_analyze = QPushButton("📂 Selecionar Vídeo e Analisar")
-        btn_analyze.setFixedHeight(60)
-        btn_analyze.clicked.connect(self.select_video)
-        layout.addWidget(btn_analyze)
+        button_layout = QHBoxLayout()
 
-        # Botão de webcam
-        self.button_cam = QPushButton("🎥 Webcam")
-        self.button_cam.setFixedHeight(60)
-        self.button_cam.clicked.connect(self.toggle_recording)
-        layout.addWidget(self.button_cam)
+        self.btn_load = QPushButton("📂 Carregar Vídeo")
+        self.btn_load.clicked.connect(self.load_video)
+        button_layout.addWidget(self.btn_load)
 
-        # Botão de estatísticas
-        btn_stats = QPushButton("📊 Estatísticas")
-        btn_stats.setFixedHeight(60)
-        # btn_stats.clicked.connect(self.ver_estatisticas)
-        layout.addWidget(btn_stats)
+        self.btn_play = QPushButton("▶️ Play")
+        self.btn_play.clicked.connect(self.play_pause_video)
+        button_layout.addWidget(self.btn_play)
 
-        # Botão de sair
-        btn_exit = QPushButton("❌ Sair")
-        btn_exit.setFixedHeight(60)
-        btn_exit.clicked.connect(self.close)
-        layout.addWidget(btn_exit)
+        self.btn_reset = QPushButton("🔄 Reset")
+        self.btn_reset.clicked.connect(self.reset_video)
+        button_layout.addWidget(self.btn_reset)
 
+        layout.addLayout(button_layout)
         self.setLayout(layout)
 
-        self.recording = False
-        self.capture_thread = None
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_frame)
+        self.playing = False
 
-    # Gets file of video.
-    def select_video(self):
+    def load_video(self):
         file_dialog = QFileDialog()
         video_path, _ = file_dialog.getOpenFileName(self, "Selecione o vídeo", "", "Videos (*.mp4 *.avi *.mov *.mkv)")
 
         if video_path:
-            print(f"Arquivo selecionado: {video_path}")
-            subprocess.run(["python3", "videoAnalyse.py", video_path])  # Use python3 se necessário
+            self.video_analyzer = VideoAnalyzer(video_path)
+            self.label_video.setText("Vídeo carregado.")
+            self.btn_play.setEnabled(True)
+            self.btn_reset.setEnabled(True)
 
-    # Webcam capture.
-    def toggle_recording(self):
-        if not self.recording:
-            self.recording = True
-            self.button_cam.setText("🛑 Parar Gravação")
-            self.capture_thread = threading.Thread(target=self.record_video)
-            self.capture_thread.start()
+    def play_pause_video(self):
+        if not self.video_analyzer:
+            return
+
+        if not self.playing:
+            self.playing = True
+            self.timer.start(30)  # 30ms ~ 33fps
+            self.btn_play.setText("⏸️ Pause")
         else:
-            self.recording = False
-            self.button_cam.setText("🎥 Iniciar Gravação")
+            self.playing = False
+            self.timer.stop()
+            self.btn_play.setText("▶️ Play")
 
-    def record_video(self):
-        cap = cv2.VideoCapture(0)
-        if not cap.isOpened():
-            print("Erro: Webcam não encontrada ou não pode ser aberta.")
-            return  # Sai da função para não tentar gravar
-        
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out = cv2.VideoWriter('gravado.mp4', fourcc, 20.0, (640, 480))
+    def reset_video(self):
+        if self.video_analyzer:
+            self.video_analyzer.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            self.label_video.setText("Vídeo reiniciado.")
+            self.playing = False
+            self.timer.stop()
+            self.btn_play.setText("▶️ Play")
 
-        while self.recording and cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
-            out.write(frame)
-            cv2.imshow('Gravando...', frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                self.recording = False
-                break
+    def update_frame(self):
+        if self.video_analyzer:
+            frame = self.video_analyzer.process_next_frame()
+            if frame is None:
+                self.playing = False
+                self.timer.stop()
+                self.btn_play.setText("▶️ Play")
 
-        cap.release()
-        out.release()
-        cv2.destroyAllWindows()
-        print("Gravação finalizada. Vídeo salvo como gravado.mp4")
+                # --- Geração de gráfico e PDF ao final ---
+                from generierenGraphen import gerar_grafico
+                from generierenPDF import gerar_pdf
+ 
+                ang_joelho = self.video_analyzer.angulos_joelho
+                ang_tornozelo = self.video_analyzer.angulos_tornozelo
+
+                valores = gerar_grafico(ang_joelho, ang_tornozelo)
+                
+                gerar_pdf(valores)
+
+                print("✅ Gráfico e PDF gerados com sucesso!")
+                return
+
+            # Conversão de imagem para o QLabel
+            height, width, channel = frame.shape
+            bytes_per_line = 3 * width
+            qimg = QImage(frame.data, width, height, bytes_per_line, QImage.Format_RGB888)
+            pixmap = QPixmap.fromImage(qimg).scaled(800, 450, Qt.KeepAspectRatio)
+            self.label_video.setPixmap(pixmap)
+
+
+    def closeEvent(self, event):
+        if self.video_analyzer:
+            self.video_analyzer.release()
+        event.accept()
 
 
 if __name__ == "__main__":
