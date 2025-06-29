@@ -75,4 +75,3 @@ def gerar_grafico(angulos_joelho, angulos_tornozelo, caminho_saida='grafico.png'
         "joelho": {"min": min_j, "max": max_j, "mediana_max": mediana_max_j, "mediana_min": mediana_min_j},
         "tornozelo": {"min": min_t, "max": max_t, "mediana_max": mediana_max_t, "mediana_min": mediana_min_t}
     }
-

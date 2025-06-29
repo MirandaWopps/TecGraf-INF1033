@@ -18,7 +18,7 @@ class MainWindow(QWidget):
         self.initUI()
 
     def initUI(self):
-        layout = QVBoxLayout()
+        layout = QVBoxLayout()#Erstellen layout
 
         self.label_video = QLabel("Nenhum vídeo carregado")
         self.label_video.setAlignment(Qt.AlignCenter)
@@ -96,6 +96,12 @@ class MainWindow(QWidget):
                 gerar_pdf(valores)
 
                 print("✅ Gráfico e PDF gerados com sucesso!")
+                
+                #    Zeigt Graphen Bild
+                #Whälen das Etikett, nach zeigt das Bild
+                self.label_video = self.draw_image();
+                
+                
                 return
 
             # Conversão de imagem para o QLabel
@@ -111,7 +117,29 @@ class MainWindow(QWidget):
             self.video_analyzer.release()
         event.accept()
 
-
+    
+    #Ziehen Bild
+    def draw_image(self):
+        try:
+            # Load image (replace with your image path)
+            pixmap = QPixmap("grafico.png")  # Change to your image file
+            if pixmap.isNull():
+                self.image_label.setText("Image not found!\nPut it in this folder.")
+                return
+                
+            # Scale image to fit while keeping aspect ratio
+            pixmap = pixmap.scaled(
+                self.label_video.width() - 20, self.label_video.height() - 20, 
+                Qt.KeepAspectRatio, Qt.SmoothTransformation
+            )
+            
+            self.label_video.setPixmap(pixmap)
+            
+        except Exception as e:
+            self.label_video.setText(f"Error loading image:\n{str(e)}")
+    
+    
+    
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
