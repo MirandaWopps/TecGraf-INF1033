@@ -99,7 +99,7 @@ class MainWindow(QWidget):
                 
                 #    Zeigt Graphen Bild
                 #Whälen das Etikett, nach zeigt das Bild
-                self.label_video = self.draw_image();
+                self.label_video = self.draw_image()
                 
                 
                 return

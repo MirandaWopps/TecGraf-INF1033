@@ -38,6 +38,43 @@ wheels = [
 ]
 
 [[package]]
+name = "bike-fit-app"
+version = "0.0.1"
+source = { editable = "." }
+dependencies = [
+    { name = "fpdf" },
+    { name = "mediapipe" },
+    { name = "opencv-python" },
+    { name = "pyside6" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "mypy" },
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "ruff" },
+    { name = "tox-uv" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "fpdf", specifier = ">=1.7.2" },
+    { name = "mediapipe", specifier = ">=0.10.21" },
+    { name = "opencv-python", specifier = ">=4.11.0.86" },
+    { name = "pyside6", specifier = ">=6.9.1" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "mypy", specifier = ">=0.991" },
+    { name = "pre-commit", specifier = ">=2.20.0" },
+    { name = "pytest", specifier = ">=7.2.0" },
+    { name = "ruff", specifier = ">=0.9.2" },
+    { name = "tox-uv", specifier = ">=1.11.3" },
+]
+
+[[package]]
 name = "cachetools"
 version = "5.5.2"
 source = { registry = "https://pypi.org/simple" }
@@ -410,43 +447,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/9b/98/a71ab060daec766acc30fb47dfca219d03de34a70d616a79a38c6066c5bf/identify-2.6.9.tar.gz", hash = "sha256:d40dfe3142a1421d8518e3d3985ef5ac42890683e32306ad614a29490abeb6bf", size = 99249 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/07/ce/0845144ed1f0e25db5e7a79c2354c1da4b5ce392b8966449d5db8dca18f1/identify-2.6.9-py2.py3-none-any.whl", hash = "sha256:c98b4322da415a8e5a70ff6e51fbc2d2932c015532d77e9f8537b4ba7813b150", size = 99101 },
-]
-
-[[package]]
-name = "imageanglesat"
-version = "0.0.1"
-source = { editable = "." }
-dependencies = [
-    { name = "fpdf" },
-    { name = "mediapipe" },
-    { name = "opencv-python" },
-    { name = "pyside6" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "mypy" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "ruff" },
-    { name = "tox-uv" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "fpdf", specifier = ">=1.7.2" },
-    { name = "mediapipe", specifier = ">=0.10.21" },
-    { name = "opencv-python", specifier = ">=4.11.0.86" },
-    { name = "pyside6", specifier = ">=6.9.1" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "mypy", specifier = ">=0.991" },
-    { name = "pre-commit", specifier = ">=2.20.0" },
-    { name = "pytest", specifier = ">=7.2.0" },
-    { name = "ruff", specifier = ">=0.9.2" },
-    { name = "tox-uv", specifier = ">=1.11.3" },
 ]
 
 [[package]]
