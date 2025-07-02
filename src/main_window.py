@@ -15,35 +15,39 @@ class MainWindow(QWidget):
         self.setWindowTitle("🚴‍♂️ Bike Fit Analyzer 🚴‍♀️")
         self.setGeometry(400, 100, 800, 600)
         self.video_analyzer = None
+        self.dark_mode = self.is_system_dark()  # Detect system theme
         self.initUI()
+
 
     def initUI(self):
         layout = QVBoxLayout()#Erstellen layout
 
+        #Label für Videoanzeige
         self.label_video = QLabel("Nenhum vídeo carregado")
         self.label_video.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.label_video)
 
-        button_layout = QHBoxLayout()
+        #Tastenlayout QH-> Horizontal
+        button_layout = QHBoxLayout()#Hinzufügen eines Layouts für die Tasten 
 
-        self.btn_load = QPushButton("📂 Carregar Vídeo")
-        self.btn_load.clicked.connect(self.load_video)
-        button_layout.addWidget(self.btn_load)
+        #button load
+        self.btn_load = QPushButton("📂 Carregar Vídeo")#
+        self.btn_load.clicked.connect(self.load_video)#attach function
+        button_layout.addWidget(self.btn_load)#insert to loadout
 
-        self.btn_play = QPushButton("▶️ Play")
-        self.btn_play.clicked.connect(self.play_pause_video)
-        button_layout.addWidget(self.btn_play)
-
-        self.btn_reset = QPushButton("🔄 Reset")
-        self.btn_reset.clicked.connect(self.reset_video)
-        button_layout.addWidget(self.btn_reset)
 
         layout.addLayout(button_layout)
         self.setLayout(layout)
+        self.update_theme()
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_frame)
         self.playing = False
+
+    def is_system_dark(self):
+        """Detect if system is in dark mode"""
+        palette = self.palette()
+        return palette.window().color().lightness() < 128
 
     def load_video(self):
         file_dialog = QFileDialog()
@@ -52,8 +56,10 @@ class MainWindow(QWidget):
         if video_path:
             self.video_analyzer = VideoAnalyzer(video_path)
             self.label_video.setText("Vídeo carregado.")
-            self.btn_play.setEnabled(True)
-            self.btn_reset.setEnabled(True)
+            # Inicia o vídeo automaticamente
+            self.play_pause_video()
+
+
 
     def play_pause_video(self):
         if not self.video_analyzer:
@@ -62,19 +68,13 @@ class MainWindow(QWidget):
         if not self.playing:
             self.playing = True
             self.timer.start(30)  # 30ms ~ 33fps
-            self.btn_play.setText("⏸️ Pause")
+
         else:
             self.playing = False
             self.timer.stop()
-            self.btn_play.setText("▶️ Play")
 
-    def reset_video(self):
-        if self.video_analyzer:
-            self.video_analyzer.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            self.label_video.setText("Vídeo reiniciado.")
-            self.playing = False
-            self.timer.stop()
-            self.btn_play.setText("▶️ Play")
+
+   
 
     def update_frame(self):
         if self.video_analyzer:
@@ -82,7 +82,7 @@ class MainWindow(QWidget):
             if frame is None:
                 self.playing = False
                 self.timer.stop()
-                self.btn_play.setText("▶️ Play")
+
 
                 # --- Geração de gráfico e PDF ao final ---
                 from generierenGraphen import gerar_grafico
@@ -111,6 +111,45 @@ class MainWindow(QWidget):
             pixmap = QPixmap.fromImage(qimg).scaled(800, 450, Qt.KeepAspectRatio)
             self.label_video.setPixmap(pixmap)
 
+
+    # Update UI theme
+    def update_theme(self):
+        """Update UI theme based on current mode"""
+        if self.dark_mode:
+            self.setStyleSheet("""
+                QWidget {
+                    background-color: #2D2D2D;
+                    color: #FFFFFF;
+                }
+
+                QPushButton {
+                    background-color: #3A3A3A;
+                    border: 1px solid #555;
+                    padding: 8px;
+                    min-width: 120px;
+                }
+                QLabel {
+                    background-color: #3A3A3A;                               
+                    border: 1px solid #555;
+                    background-color: #2D2D2D;
+                }
+            """)
+        else:
+            self.setStyleSheet("""
+                QWidget {
+                    background-color: #F5F5F5;
+                    color: #000000;
+                }
+                QPushButton {
+                    background-color: #E0E0E0;
+                    border: 1px solid #AAA;
+                    padding: 8px;
+                    min-width: 120px;
+                }
+                QLabel {
+                    border: 1px solid #AAA;
+                }
+            """)
 
     def closeEvent(self, event):
         if self.video_analyzer:
