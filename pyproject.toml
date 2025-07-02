@@ -1,5 +1,5 @@
 [project]
-name = "ImageAnglesAT"
+name = "bike_fit_app"
 version = "0.0.1"
 description = "This is a template repository for Python projects that use uv for their dependency management."
 authors = [{ name = "Andrey Rodrigues", email = "arodrigues@tecgraf.puc-rio.br" }]
