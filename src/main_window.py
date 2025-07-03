@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtGui import QPixmap, QImage
 from PySide6.QtCore import QTimer, Qt
-from videoAnalyse import VideoAnalyzer
+from bike_fit_app.videoAnalyse import VideoAnalyzer
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -35,7 +35,7 @@ class MainWindow(QWidget):
         self.btn_load.clicked.connect(self.load_video)#attach function
         button_layout.addWidget(self.btn_load)#insert to loadout
 
-
+        
         layout.addLayout(button_layout)
         self.setLayout(layout)
         self.update_theme()
@@ -73,16 +73,13 @@ class MainWindow(QWidget):
             self.playing = False
             self.timer.stop()
 
-
    
-
     def update_frame(self):
         if self.video_analyzer:
             frame = self.video_analyzer.process_next_frame()
             if frame is None:
                 self.playing = False
                 self.timer.stop()
-
 
                 # --- Geração de gráfico e PDF ao final ---
                 from generierenGraphen import gerar_grafico
@@ -100,8 +97,6 @@ class MainWindow(QWidget):
                 #    Zeigt Graphen Bild
                 #Whälen das Etikett, nach zeigt das Bild
                 self.label_video = self.draw_image()
-                
-                
                 return
 
             # Conversão de imagem para o QLabel
