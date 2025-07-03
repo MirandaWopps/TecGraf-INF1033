@@ -3,24 +3,24 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
-class VideoAnalyzer:
-    def __init__(self, video_path):
-        self.video_path = video_path
-        self.angulos_joelho, self.angulos_tornozelo = [], []
-        self.cap = cv2.VideoCapture(self.video_path)
-        self.mp_pose = mp.solutions.pose
+class VideoAnalyzer: #Class to analyze video and calculate angles of knee and ankle
+    def __init__(self, video_path): #params 1 (nothing, video path)| ALREADY STARTS WITH A FUNCTION
+        self.video_path = video_path #arg video_path
+        self.angulos_joelho, self.angulos_tornozelo = [], []# vectors to store angles
+        self.cap = cv2.VideoCapture(self.video_path)#starts video capture
+        self.mp_pose = mp.solutions.pose #Acessing module mediapipe.pose and saving reference in self.mp_pose, the class atribute
         self.pose = self.mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
-        self.paused = False
-        self.stopped = False
+        self.paused = False #Class variable to control pause state.
+        self.stopped = False #Controls when video ends.
 
-    def process_next_frame(self):
-        if self.paused:
+    def process_next_frame(self): #params 1 (nothing)
+        if self.paused: #if we declared as it stopped, dont read the next frame
             return None
         
-        ret, frame = self.cap.read()
-        if not ret:
-            self.stopped = True
-            return None
+        ret, frame = self.cap.read()#returns (avaliability of video,frame)
+        if not ret: #if didnt stop
+            self.stopped = True #flag video ended
+            return None #no return needed
 
         image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = self.pose.process(image_rgb)
@@ -64,6 +64,3 @@ class VideoAnalyzer:
 
     def release(self):
         self.cap.release()
-   
-
-
