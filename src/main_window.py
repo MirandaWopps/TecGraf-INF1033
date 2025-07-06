@@ -135,8 +135,6 @@ class MainWindow(QWidget):
                 print("✅ Gráfico e PDF gerados com sucesso!")
                 
                 #    Zeigt Graphen Bild
-                #Whälen das Etikett, nach zeigt das Bild
-                #self.label_video = self.draw_image()
                 self.draw_image()
                 return
 
