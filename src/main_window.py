@@ -65,12 +65,23 @@ class MainWindow(QWidget):
     def is_system_dark(self, os_name):
         if os_name == 'Windows':
             import ctypes
+            import winreg
             try:
-                # Windows 10 and later
-                return ctypes.windll.user32.GetSysColor(15) < 128  # 15 is COLOR_WINDOW
-            except Exception:
+                # Method 1: System color check
+                if ctypes.windll.user32.GetSysColor(15) < 128:  # COLOR_WINDOW = 15
+                    return True
+                
+                # Method 2: Registry check (more reliable)
+                with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 
+                                r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize") as key:
+                    apps_use_light = winreg.QueryValueEx(key, "AppsUseLightTheme")[0]
+                    return apps_use_light == 0
+            except Exception as e:
+                print(f"Error checking dark mode: {e}")
                 return False
-        elif os_name == 'Linux':#Subprocess: a terminal command.            
+
+        #Linux detection algorithm using a subprocess: a terminal command    
+        elif os_name == 'Linux':
             try:
                 result = subprocess.run(
                     ["gsettings", "get", "org.gnome.desktop.interface", "color-scheme"],
