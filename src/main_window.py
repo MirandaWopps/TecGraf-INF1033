@@ -1,4 +1,5 @@
 #main_window.py
+#Ziel: Erstellen ein zuerst Fenster für die Bike Fit Analyzer App und der Programmstart
 import sys
 import cv2
 import numpy as np
@@ -9,13 +10,17 @@ from PySide6.QtGui import QPixmap, QImage
 from PySide6.QtCore import QTimer, Qt
 from bike_fit_app.videoAnalyse import VideoAnalyzer
 
+import subprocess #acess to terminal
+import os #discover the operational system
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("🚴‍♂️ Bike Fit Analyzer 🚴‍♀️")
         self.setGeometry(400, 100, 800, 600)
         self.video_analyzer = None
-        self.dark_mode = self.is_system_dark()  # Detect system theme
+        self.operationalSystem = self.getOS()  # Detect operational system
+        self.dark_mode = self.is_system_dark(self.operationalSystem)  # Detect system theme
         self.initUI()
 
 
@@ -44,10 +49,45 @@ class MainWindow(QWidget):
         self.timer.timeout.connect(self.update_frame)
         self.playing = False
 
-    def is_system_dark(self):
-        """Detect if system is in dark mode"""
+
+    def getOS(self): #Discovering the operational system
+        if sys.platform.startswith('win'):
+            return 'Windows'
+        elif sys.platform.startswith('linux'):
+            return 'Linux'
+        elif sys.platform.startswith('darwin'):
+            return 'macOS'
+        else:
+            return 'Unknown'
+    
+
+    #Detecting the system theme
+    def is_system_dark(self, os_name):
+        if os_name == 'Windows':
+            import ctypes
+            try:
+                # Windows 10 and later
+                return ctypes.windll.user32.GetSysColor(15) < 128  # 15 is COLOR_WINDOW
+            except Exception:
+                return False
+        elif os_name == 'Linux':#Subprocess: a terminal command.            
+            try:
+                result = subprocess.run(
+                    ["gsettings", "get", "org.gnome.desktop.interface", "color-scheme"],
+                    capture_output=True,
+                    text=True
+                        )
+                output = result.stdout.strip()
+                if 'prefer-dark' in output:
+                    print("a")
+                    return True
+            except Exception as e:
+                print(f"Erro ao detectar tema do sistema: {e}")
+                return False
+        '''
         palette = self.palette()
         return palette.window().color().lightness() < 128
+        '''
 
     def load_video(self):
         file_dialog = QFileDialog()
@@ -96,7 +136,8 @@ class MainWindow(QWidget):
                 
                 #    Zeigt Graphen Bild
                 #Whälen das Etikett, nach zeigt das Bild
-                self.label_video = self.draw_image()
+                #self.label_video = self.draw_image()
+                self.draw_image()
                 return
 
             # Conversão de imagem para o QLabel
@@ -122,6 +163,10 @@ class MainWindow(QWidget):
                     border: 1px solid #555;
                     padding: 8px;
                     min-width: 120px;
+                    border-radius: 4px;  /* 👈 quanto maior, mais arredondado */
+                }
+                QPushButton:hover {
+                    background-color: #2A2A2A;  /* 👈 Mais escuro ao passar o mouse */
                 }
                 QLabel {
                     background-color: #3A3A3A;                               
@@ -140,6 +185,7 @@ class MainWindow(QWidget):
                     border: 1px solid #AAA;
                     padding: 8px;
                     min-width: 120px;
+                    border-radius: 4px;  /* 👈 quanto maior, mais arredondado */
                 }
                 QLabel {
                     border: 1px solid #AAA;
