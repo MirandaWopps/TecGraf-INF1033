@@ -5,6 +5,7 @@ import numpy as np
 from unittest.mock import MagicMock, patch
 from bike_fit_app.videoAnalyse import VideoAnalyzer
 
+
 def test_should_accept_only_video_formats():
     # todo: descobrir como testar se levanta um erro
     #Testing video path existance.
