@@ -139,9 +139,10 @@ class MainWindow(QWidget):
                 ang_joelho = self.video_analyzer.angulos_joelho
                 ang_tornozelo = self.video_analyzer.angulos_tornozelo
 
-                valores = gerar_grafico(ang_joelho, ang_tornozelo)
                 
-                gerar_pdf(valores)
+                valores = gerar_grafico(ang_joelho, ang_tornozelo) #Erstellen des Graphen bild
+
+                gerar_pdf(valores) #Erstellen die pdf-Datei
 
                 print("✅ Gráfico e PDF gerados com sucesso!")
                 
