@@ -133,8 +133,8 @@ class MainWindow(QWidget):
                 self.timer.stop()
 
                 # --- Geração de gráfico e PDF ao final ---
-                from generierenGraphen import gerar_grafico
-                from generierenPDF import gerar_pdf
+                from Graph import gerar_grafico
+                from PDF import gerar_pdf
  
                 ang_joelho = self.video_analyzer.angulos_joelho
                 ang_tornozelo = self.video_analyzer.angulos_tornozelo
