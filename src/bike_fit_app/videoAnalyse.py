@@ -4,10 +4,25 @@ import mediapipe as mp
 import numpy as np
 
 class VideoAnalyzer: #Class to analyze video and calculate angles of knee and ankle
+
+#TODO: algo tem de ser feito para se o video pathing nao for de fato um video lançar uma exceção !
+
     def __init__(self, video_path): #params 1 (nothing, video path)| ALREADY STARTS WITH A FUNCTION
+        # Error Treatment 1: Garantee that the video path is a video file.
+        valid_extensions = ('mp4', 'wmv', 'avi', 'mov', 'avchd', 'flv', 'f4v', 'swf', 'mkv', 'webm') #valid video formats
+        file_extension = video_path.lower().split('.')[-1]#solving up case possibility + catching the extension
+        if file_extension not in valid_extensions: # is it there ?
+            raise ValueError(f"Invalid video format. Supported formats: {valid_extensions}")        
+        #ends treatment
+
+
         self.video_path = video_path #arg video_path
         self.angulos_joelho, self.angulos_tornozelo = [], []# vectors to store angles
-        self.cap = cv2.VideoCapture(self.video_path)#starts video capture
+        self.cap = cv2.VideoCapture(self.video_path)#starts video capture        
+        if not self.cap.isOpened(): # Additional check if video opened successfully
+            raise IOError("Could not open video file. The file might be corrupted or the codec is not supported.")
+
+
         self.mp_pose = mp.solutions.pose #Acessing module mediapipe.pose and saving reference in self.mp_pose, the class atribute
         self.pose = self.mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
         self.paused = False #Class variable to control pause state.
