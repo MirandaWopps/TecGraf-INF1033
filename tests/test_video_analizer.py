@@ -20,7 +20,6 @@ def test_should_accept_only_video_formats():
     assert video_analyzer is not None  # Verifica se o objeto foi criado corretamente
 
 
-
 #Test 2:
 def test_should_process_next_frame():
     video_analizer = VideoAnalyzer("/home/lucas/inf1033/TecGraf-INF1033/test_data/videoplayback.mp4")  # Use a valid video file for testing
@@ -29,22 +28,38 @@ def test_should_process_next_frame():
     assert isinstance(frame, np.ndarray)  # Ensure the frame is a numpy array (image)
     #no problem 
 
-#remover talvez \/ o tst 3 e 4
-'''
-# Test 3:
-def test_process_next_frame_when_paused():
-    """Testa comportamento quando pausado"""
-    analyzer = VideoAnalyzer("dummy.mp4")
-    analyzer.paused = True
-    assert analyzer.process_next_frame() is None
 
-# Test 4:
-def test_process_next_frame_when_stopped():
-    """Testa comportamento quando vídeo acabou"""
-    analyzer = VideoAnalyzer("dummy.mp4")
-    analyzer.stopped = True
-    assert analyzer.process_next_frame() is None
+#Test 3: We need 3 points in order to calculate angle. What if 1 is missing ?
+def test_should_only_calculate_angle_with_three_points():
+    with patch('cv2.VideoCapture'):
+        analyzer = VideoAnalyzer("dummy.mp4")
+        
+        # Teste com pontos completos
+        assert analyzer.calcular_angulo([0,0], [1,1], [2,0]) is not None
+        
+        # Teste com pontos faltantes (deve falhar)
+        with pytest.raises(Exception):
+            analyzer.calcular_angulo([0,0], None, [2,0])
+        
+        with pytest.raises(Exception):
+            analyzer.calcular_angulo([0,0], [1,1], "invalid")
+
+
 '''
+# Test 4: Is the file
+def test_should_validate_coordinate_types():
+    with patch('cv2.VideoCapture'):
+        analyzer = VideoAnalyzer("dummy.mp4")
+        
+        # Teste com tipos inválidos
+        with pytest.raises(ValueError):
+            analyzer.calcular_angulo("text", [1,1], [2,0])
+            
+        with pytest.raises(ValueError):
+            analyzer.calcular_angulo([0,0], {"x":1, "y":1}, [2,0])
+'''
+
+
 # Test 5:
 # --- Testes de Cálculo de Ângulos ---
 def test_calcular_angulo():
@@ -71,4 +86,123 @@ def test_release_resources():
         analyzer = VideoAnalyzer("dummy.mp4")
         analyzer.release()
         
-        mock_cap.release.assert_called_once()   
+        mock_cap.release.assert_called_once()
+
+
+
+# Test 7:Subprocess to get OS information.What if the subprocess fails? Like: if(t_pid sub==-1)
+
+
+
+
+
+
+
+
+
+
+
+
+'''
+Aqui está uma lista de títulos/exercícios para você praticar o desenvolvimento do código, organizados por nível de complexidade:
+📌 Nível Básico (Fundamentos)
+
+    Validação de Extensão de Arquivo
+
+        Criar função que verifica se extensão está na lista permitida
+
+        Tratar casos como: sem extensão, múltiplos pontos, case sensitive
+
+    Mock Básico de VideoCapture
+
+        Implementar classe mock que simula cv2.VideoCapture
+
+        Deve responder a isOpened(), read(), release()
+
+    Cálculo de Ângulos entre Pontos
+
+        Função que recebe 3 pontos (x,y) e retorna ângulo em graus
+
+        Testar com ângulos conhecidos (0°, 45°, 90°, 180°)
+
+📌 Nível Intermediário (Integração)
+
+    Sistema de Pausa/Continuação
+
+        Implementar lógica que pausa/continua o processamento
+
+        Testar estado interno da classe
+
+    Detecção de Landmarks Falsos
+
+        Criar dados mock para mediapipe.solutions.pose
+
+        Simular diferentes configurações de landmarks
+
+    Gerenciamento de Recursos
+
+        Implementar context manager (enter/exit)
+
+        Garantir que recursos são liberados corretamente
+
+📌 Nível Avançado (Sistema Completo)
+
+    Pipeline de Processamento de Vídeo
+
+        Classe que gerencia:
+        ✅ Validação de entrada
+        ✅ Processamento frame-a-frame
+        ✅ Acúmulo de métricas
+        ✅ Geração de saída
+
+    Sistema de Tolerância a Falhas
+
+        Continuar processamento mesmo se:
+
+            Algum frame falhar
+
+            MediaPipe não detectar pose
+
+            Problemas temporários de I/O
+
+    Teste de Integração Realista
+
+        Usar vídeo de teste pequeno (2-3s)
+
+        Verificar:
+
+            Taxa de processamento
+
+            Consistência dos ângulos calculados
+
+            Uso de memória
+
+🛠️ Bônus (Desafios Extras)
+
+    CLI Interativo
+
+        Menu para:
+        ▶️ Carregar vídeo
+        ⏸️ Pausar/Continuar
+        📊 Mostrar métricas
+        💾 Exportar resultados
+
+    Visualização em Tempo Real
+
+        Plotar gráfico com ângulos enquanto processa
+
+        Overlay dos landmarks no vídeo
+
+    Multiplataforma
+
+        Adaptar validação para:
+
+            Windows (checar registry)
+
+            Linux (checar gsettings)
+
+            macOS (checar defaults)
+
+
+
+'''
