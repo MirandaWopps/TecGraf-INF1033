@@ -104,12 +104,27 @@ class MainWindow(QWidget):
         file_dialog = QFileDialog()
         video_path, _ = file_dialog.getOpenFileName(self, "Selecione o vídeo", "", "Videos (*.mp4 *.avi *.mov *.mkv)")
 
+        #Bug Solve: when new file is inserted it used to not start if the old was playing.
         if video_path:
-            self.video_analyzer = VideoAnalyzer(video_path)
-            self.label_video.setText("Vídeo carregado.")
-            # Inicia o vídeo automaticamente
-            self.play_pause_video()
+            # 1. Parar o vídeo atual se estiver rodando
+            if self.playing:
+                self.play_pause_video()  # Isso irá parar o timer
+            
+            # 2. Liberar recursos do vídeo anterior
+            if self.video_analyzer:            
+                self.video_analyzer.release()
 
+            # 3. Criar novo analisador de vídeo
+            try:
+                self.video_analyzer = VideoAnalyzer(video_path)
+                self.label_video.setText("Novo vídeo carregado.")
+                
+                # 4. Resetar estado de reprodução
+                self.playing = False
+                self.play_pause_video()  # Inicia o novo vídeo
+                
+            except Exception as e:
+                self.label_video.setText(f"Erro ao carregar vídeo: {str(e)}")
 
 
     def play_pause_video(self):
@@ -126,6 +141,9 @@ class MainWindow(QWidget):
 
    
     def update_frame(self):
+        if not self.video_analyzer or not self.playing:  # Verificação adicional
+            return
+        
         if self.video_analyzer:
             frame = self.video_analyzer.process_next_frame()
             if frame is None:
@@ -133,15 +151,16 @@ class MainWindow(QWidget):
                 self.timer.stop()
 
                 # --- Geração de gráfico e PDF ao final ---
-                from generierenGraphen import gerar_grafico
-                from generierenPDF import gerar_pdf
+                from Graph import gerar_grafico
+                from PDF import gerar_pdf
  
                 ang_joelho = self.video_analyzer.angulos_joelho
                 ang_tornozelo = self.video_analyzer.angulos_tornozelo
 
-                valores = gerar_grafico(ang_joelho, ang_tornozelo)
                 
-                gerar_pdf(valores)
+                valores = gerar_grafico(ang_joelho, ang_tornozelo) #Erstellen des Graphen bild
+
+                gerar_pdf(valores) #Erstellen die pdf-Datei
 
                 print("✅ Gráfico e PDF gerados com sucesso!")
                 

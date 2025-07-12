@@ -31,7 +31,7 @@ clean-build: ## Clean build artifacts
 run-app: ## Test the code with pytest
 	@echo "🚀 Running bike-fit-app"
 	
-	@uv run python src\main_window.py
+	@uv run python src/main_window.py
 
 .PHONY: help
 help:
