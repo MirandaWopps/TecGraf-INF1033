@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 from bike_fit_app.videoAnalyse import VideoAnalyzer
 
 
-#Test 1
+#Test 1:  arquivo de extensao invalido ou nao existe.
 def test_should_accept_only_video_formats():
     """Testa se aceita apenas formatos de vídeo válidos"""
     with pytest.raises(ValueError):#espera o construtor levantar exceção do tipo ValueError
@@ -16,15 +16,15 @@ def test_should_accept_only_video_formats():
     with pytest.raises(ValueError):
         VideoAnalyzer("audio.mp3")  # Áudio não é um vídeo
     # Teste com um vídeo válido (não deve levantar exceção)
-    video_analyzer = VideoAnalyzer("/home/lucas/inf1033/TecGraf-INF1033/test_data/videoplayback.mp4")
+    video_analyzer = VideoAnalyzer("test_data/videoplayback.mp4")
     assert video_analyzer is not None  # Verifica se o objeto foi criado corretamente
 
 
 #Test 2:
-def test_should_process_next_frame():
-    video_analizer = VideoAnalyzer("/home/lucas/inf1033/TecGraf-INF1033/test_data/videoplayback.mp4")  # Use a valid video file for testing
+def test_should_process_next_frame():#  caminho relativo abaixo porque damos make test a partir do TEcgraf folder.
+    video_analizer = VideoAnalyzer("test_data/videoplayback.mp4")  # Use a valid video file for testing
     frame = video_analizer.process_next_frame()
-    assert frame is not None  # Ensure that a frame is returned
+    assert frame is not None  # Ensure that a frame is returned,  so valid video was sent.
     assert isinstance(frame, np.ndarray)  # Ensure the frame is a numpy array (image)
     #no problem 
 
@@ -38,7 +38,7 @@ def test_should_only_calculate_angle_with_three_points():
         assert analyzer.calcular_angulo([0,0], [1,1], [2,0]) is not None
         
         # Teste com pontos faltantes (deve falhar)
-        with pytest.raises(Exception):
+        with pytest.raises(Exception):# oq tadps de pontos ele vai fazer um raise exception, istoe, o cod na lin ha 42 vai precisar levantar uma exceção para passar no teste.
             analyzer.calcular_angulo([0,0], None, [2,0])
         
         with pytest.raises(Exception):
@@ -91,15 +91,6 @@ def test_release_resources():
 
 
 # Test 7:Subprocess to get OS information.What if the subprocess fails? Like: if(t_pid sub==-1)
-
-
-
-
-
-
-
-
-
 
 
 
