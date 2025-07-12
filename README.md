@@ -26,12 +26,19 @@ This will also generate your `uv.lock` file
 make test
 ```
 
-### 3. Run the pre-commit hooks
+### 4. Run the pre-commit hooks
 
 Initially, the CI/CD pipeline might be failing due to formatting issues. To resolve those run:
 
 ```bash
 uv run pre-commit run -a
+```
+
+### 5. Run main code.
+
+We simplified app's start command, so just use it:
+```bash
+make run-app
 ```
 
 ---
