@@ -3,10 +3,8 @@
 import matplotlib
 matplotlib.use('QtAgg')
 
-
-import matplotlib.pyplot as plt
-import numpy as np
-
+import matplotlib.pyplot as plt #Plot library
+import numpy as np #Numpy library for numerical operations
 
 
 def calcular_mediana_intervalo(valores, limite_inferior, limite_superior):
@@ -21,8 +19,11 @@ def calcular_mediana_intervalo(valores, limite_inferior, limite_superior):
     else:
         return (valores_intervalo[n // 2 - 1] + valores_intervalo[n // 2]) / 2
 
-def gerar_grafico(angulos_joelho, angulos_tornozelo, caminho_saida='grafico.png', exibir = True):
+
+def gerar_grafico(angulos_joelho, angulos_tornozelo, caminho_saida='report/grafico.png', exibir = True):
     """Gera os gráficos com as medianas de máximos e mínimos"""
+    import os
+    os.makedirs(os.path.dirname(caminho_saida), exist_ok=True)
 
     # Joelho
     min_j, max_j = np.min(angulos_joelho), np.max(angulos_joelho)
@@ -62,12 +63,15 @@ def gerar_grafico(angulos_joelho, angulos_tornozelo, caminho_saida='grafico.png'
     plt.legend()
 
     plt.tight_layout()
+
+    import os
+    os.makedirs(os.path.dirname(caminho_saida), exist_ok=True)
+
     plt.savefig(caminho_saida)
     
     #Se o parametro está True teremos exibicao do grafico na tela.
     if exibir:
         plt.show()
-    
     plt.close()
 
     # Retorna também os valores para o PDF

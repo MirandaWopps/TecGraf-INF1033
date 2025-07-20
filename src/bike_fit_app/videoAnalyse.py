@@ -3,11 +3,20 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
-class VideoAnalyzer: #Class to analyze video and calculate angles of knee and ankle
+from scipy.signal import savgol_filter
+class VideoAnalyzer:
+    """Summary line: class to analyze video and calculate angles of knee and ankle
 
-#TODO: algo tem de ser feito para se o video pathing nao for de fato um video lançar uma exceção !
+    The class got a builder: __init__ , a function to process next frame, suavizar angulos, remover outliers e calcular angulos.
 
-    def __init__(self, video_path): #params 1 (nothing, video path)| ALREADY STARTS WITH A FUNCTION
+    Args:
+        video_path: String with the path to the video file.
+
+    Returns:
+        All the functions... All these comments shall be to the functions.
+    """
+    
+    def __init__(self, video_path): #params 1 (nothing, video path)| ALREADY STARTS WITH A FUNCTION        
         # Error Treatment 1: Garantee that the video path is a video file.
         valid_extensions = ('mp4', 'wmv', 'avi', 'mov', 'avchd', 'flv', 'f4v', 'swf', 'mkv', 'webm') #valid video formats
         file_extension = video_path.lower().split('.')[-1]#solving up case possibility + catching the extension
@@ -24,6 +33,7 @@ class VideoAnalyzer: #Class to analyze video and calculate angles of knee and an
         self.mp_pose = mp.solutions.pose #Acessing module mediapipe.pose and saving reference in self.mp_pose, the class atribute
         self.pose = self.mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
         self.stopped = False #Controls when video ends.
+
 
     def process_next_frame(self): #params 1 (nothing)
         ret, frame = self.cap.read()#returns (avaliability of video,frame)
@@ -63,6 +73,28 @@ class VideoAnalyzer: #Class to analyze video and calculate angles of knee and an
                 pass
 
         return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+
+    def suavizar_angulos(self, angulos):
+        """Aplica filtro Savitzky-Golay para suavizar oscilações"""
+        window_size = min(9, len(angulos))  # Janela de 9 frames (ou menos se não houver dados suficientes)
+        if window_size % 2 == 0:  # Garante que seja ímpar
+            window_size -= 1
+        return savgol_filter(angulos, window_size, 2)  # Polinômio de ordem 2
+
+
+    # Adicione no videoAnalyse.py
+    def remover_outliers(self, angulos, threshold=2.5):
+        """Remove valores que desviam muito da média"""
+        if not angulos:
+            return angulos
+            
+        median = np.median(angulos)
+        mad = 1.4826 * np.median(np.abs(angulos - median))  # Desvio absoluto mediano
+        
+        # Substitui outliers pela mediana
+        return [x if (abs(x - median) < threshold * mad) else median for x in angulos]
+
 
     def calcular_angulo(self, a, b, c):
         a, b, c = np.array(a), np.array(b), np.array(c)

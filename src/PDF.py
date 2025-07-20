@@ -2,7 +2,7 @@
 
 from fpdf import FPDF
 
-def gerar_pdf(valores, caminho_pdf='relatorio_angulos.pdf', caminho_imagem='grafico.png'):
+def gerar_pdf(valores, caminho_pdf='report/relatorio_angulos.pdf', caminho_imagem='report/grafico.png'):
     """Gera o relatório PDF"""
 
     pdf = FPDF()
@@ -23,9 +23,5 @@ def gerar_pdf(valores, caminho_pdf='relatorio_angulos.pdf', caminho_imagem='graf
     pdf.cell(0, 10, f"Tornozelo - Mediana Min: {valores['tornozelo']['mediana_min']:.2f} | Mediana Max: {valores['tornozelo']['mediana_max']:.2f}", ln=True)
 
     pdf.ln(10)
-    pdf.image(caminho_imagem, x=10, w=190)
-    pdf.output(caminho_pdf)
-    
-    
-    
-
+    pdf.image(caminho_imagem, x=10, w=190)#poe a imagem
+    pdf.output(caminho_pdf)#cria o PDF

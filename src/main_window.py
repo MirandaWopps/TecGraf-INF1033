@@ -9,19 +9,24 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QPixmap, QImage
 from PySide6.QtCore import QTimer, Qt
 from bike_fit_app.videoAnalyse import VideoAnalyzer
+from PySide6.QtWidgets import QMessageBox
 
-import subprocess #acess to terminal
-import os #discover the operational system
+import Theme # Import the theme module to set dark or light mode
+from scipy.signal import savgol_filter # helps fix weird angles
+
 
 class MainWindow(QWidget):
     def __init__(self):
+        self.playing = False
         super().__init__()
         self.setWindowTitle("🚴‍♂️ Bike Fit Analyzer 🚴‍♀️")
         self.setGeometry(400, 100, 800, 600)
         self.video_analyzer = None
-        self.operationalSystem = self.getOS()  # Detect operational system
-        self.dark_mode = self.is_system_dark(self.operationalSystem)  # Detect system theme
-        self.initUI()
+        self.current_video_path = None  # Add this line
+        self.operationalSystem = Theme.getOS()  # Detect operational system
+        self.dark_mode = Theme.is_system_dark(self.operationalSystem)  # Detect system theme
+        self.playing = False  # 🔧 Corrige erro de atributo inexistente
+        self.initUI()#after these first datas setup, we build the UI(the window)
 
 
     def initUI(self):
@@ -43,62 +48,11 @@ class MainWindow(QWidget):
         
         layout.addLayout(button_layout)
         self.setLayout(layout)
-        self.update_theme()
+        Theme.apply_theme(self, self.dark_mode)
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_frame)
-        self.playing = False
 
-
-    def getOS(self): #Discovering the operational system
-        if sys.platform.startswith('win'):
-            return 'Windows'
-        elif sys.platform.startswith('linux'):
-            return 'Linux'
-        elif sys.platform.startswith('darwin'):
-            return 'macOS'
-        else:
-            return 'Unknown'
-    
-
-    #Detecting the system theme
-    def is_system_dark(self, os_name):
-        if os_name == 'Windows':
-            import ctypes
-            import winreg
-            try:
-                # Method 1: System color check
-                if ctypes.windll.user32.GetSysColor(15) < 128:  # COLOR_WINDOW = 15
-                    return True
-                
-                # Method 2: Registry check (more reliable)
-                with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 
-                                r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize") as key:
-                    apps_use_light = winreg.QueryValueEx(key, "AppsUseLightTheme")[0]
-                    return apps_use_light == 0
-            except Exception as e:
-                print(f"Error checking dark mode: {e}")
-                return False
-
-        #Linux detection algorithm using a subprocess: a terminal command    
-        elif os_name == 'Linux':
-            try:
-                result = subprocess.run(
-                    ["gsettings", "get", "org.gnome.desktop.interface", "color-scheme"],
-                    capture_output=True,
-                    text=True
-                        )
-                output = result.stdout.strip()
-                if 'prefer-dark' in output:
-                    print("a")
-                    return True
-            except Exception as e:
-                print(f"Erro ao detectar tema do sistema: {e}")
-                return False
-        '''
-        palette = self.palette()
-        return palette.window().color().lightness() < 128
-        '''
 
     def load_video(self):
         file_dialog = QFileDialog()
@@ -109,7 +63,8 @@ class MainWindow(QWidget):
             # 1. Parar o vídeo atual se estiver rodando
             if self.playing:
                 self.play_pause_video()  # Isso irá parar o timer
-            
+
+
             # 2. Liberar recursos do vídeo anterior
             if self.video_analyzer:            
                 self.video_analyzer.release()
@@ -124,7 +79,8 @@ class MainWindow(QWidget):
                 self.play_pause_video()  # Inicia o novo vídeo
                 
             except Exception as e:
-                self.label_video.setText(f"Erro ao carregar vídeo: {str(e)}")
+                self.label_video.setText(f"Erro: {str(e)}")
+                QMessageBox.critical(self, "Erro", f"Falha ao carregar vídeo:\n{str(e)}")
 
 
     def play_pause_video(self):
@@ -139,6 +95,22 @@ class MainWindow(QWidget):
             self.playing = False
             self.timer.stop()
 
+
+    def smooth_angles(self, angles):
+        """Add this new method"""
+        if not angles or len(angles) < 5:
+            return angles
+            
+        median = np.median(angles)
+        mad = 1.4826 * np.median(np.abs(angles - median))
+        cleaned = [x if abs(x - median) < 2.5*mad else median for x in angles]
+        
+        window_size = min(9, len(cleaned))
+        if window_size % 2 == 0:
+            window_size -= 1
+            
+        return savgol_filter(cleaned, window_size, 2)
+
    
     def update_frame(self):
         if not self.video_analyzer or not self.playing:  # Verificação adicional
@@ -149,23 +121,7 @@ class MainWindow(QWidget):
             if frame is None:
                 self.playing = False
                 self.timer.stop()
-
-                # --- Geração de gráfico e PDF ao final ---
-                from Graph import gerar_grafico
-                from PDF import gerar_pdf
- 
-                ang_joelho = self.video_analyzer.angulos_joelho
-                ang_tornozelo = self.video_analyzer.angulos_tornozelo
-
-                
-                valores = gerar_grafico(ang_joelho, ang_tornozelo) #Erstellen des Graphen bild
-
-                gerar_pdf(valores) #Erstellen die pdf-Datei
-
-                print("✅ Gráfico e PDF gerados com sucesso!")
-                
-                #    Zeigt Graphen Bild
-                self.draw_image()
+                self.gerar_resultados()
                 return
 
             # Conversão de imagem para o QLabel
@@ -176,49 +132,26 @@ class MainWindow(QWidget):
             self.label_video.setPixmap(pixmap)
 
 
-    # Update UI theme
-    def update_theme(self):
-        """Update UI theme based on current mode"""
-        if self.dark_mode:
-            self.setStyleSheet("""
-                QWidget {
-                    background-color: #2D2D2D;
-                    color: #FFFFFF;
-                }
+    def video_ended(self):
+        """Add this new method"""
+        self.timer.stop()
+        self.btn_load.setEnabled(True)
+        
+        if self.video_analyzer:
+            try:
+                knee_angles = self.smooth_angles(self.video_analyzer.angulos_joelho)
+                ankle_angles = self.smooth_angles(self.video_analyzer.angulos_tornozelo)
+                
+                # Conversão de imagem para o QLabel
+                height, width, channel = frame.shape
+                bytes_per_line = 3 * width
+                qimg = QImage(frame.data, width, height, bytes_per_line, QImage.Format_RGB888)
+                pixmap = QPixmap.fromImage(qimg).scaled(800, 450, Qt.KeepAspectRatio)
+                self.label_video.setPixmap(pixmap)
+                
+            except Exception as e:
+                QMessageBox.warning(self, "Processing Error", str(e))
 
-                QPushButton {
-                    background-color: #3A3A3A;
-                    border: 1px solid #555;
-                    padding: 8px;
-                    min-width: 120px;
-                    border-radius: 4px;  /* 👈 quanto maior, mais arredondado */
-                }
-                QPushButton:hover {
-                    background-color: #2A2A2A;  /* 👈 Mais escuro ao passar o mouse */
-                }
-                QLabel {
-                    background-color: #3A3A3A;                               
-                    border: 1px solid #555;
-                    background-color: #2D2D2D;
-                }
-            """)
-        else:
-            self.setStyleSheet("""
-                QWidget {
-                    background-color: #F5F5F5;
-                    color: #000000;
-                }
-                QPushButton {
-                    background-color: #E0E0E0;
-                    border: 1px solid #AAA;
-                    padding: 8px;
-                    min-width: 120px;
-                    border-radius: 4px;  /* 👈 quanto maior, mais arredondado */
-                }
-                QLabel {
-                    border: 1px solid #AAA;
-                }
-            """)
 
     def closeEvent(self, event):
         if self.video_analyzer:
@@ -230,9 +163,9 @@ class MainWindow(QWidget):
     def draw_image(self):
         try:
             # Load image (replace with your image path)
-            pixmap = QPixmap("grafico.png")  # Change to your image file
+            pixmap = QPixmap("report/grafico.png")  # Change to your image file
             if pixmap.isNull():
-                self.image_label.setText("Image not found!\nPut it in this folder.")
+                self.label_video.setText("Image not found!\nPut it in this folder.")
                 return
                 
             # Scale image to fit while keeping aspect ratio
@@ -247,10 +180,32 @@ class MainWindow(QWidget):
             self.label_video.setText(f"Error loading image:\n{str(e)}")
     
     
-    
+    def gerar_resultados(self):
+        """Gera gráficos e PDF ao final do vídeo"""
+        try:
+            from Graph import gerar_grafico
+            from PDF import gerar_pdf
+            
+            ang_joelho = self.smooth_angles(self.video_analyzer.angulos_joelho)
+            ang_tornozelo = self.smooth_angles(self.video_analyzer.angulos_tornozelo)
+            
+            # Get the results from gerar_grafico which returns the proper structure
+            resultados = gerar_grafico(ang_joelho, ang_tornozelo)
+            
+            # Add video path to results
+            resultados['video'] = self.current_video_path
+            
+            gerar_pdf(resultados)
+
+            self.label_video.setText("Análise concluída!")
+            self.draw_image()
+            
+        except Exception as e:
+            QMessageBox.warning(self, "Aviso", f"Erro ao gerar resultados:\n{str(e)}")
+
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
-

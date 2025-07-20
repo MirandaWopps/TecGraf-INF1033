@@ -93,7 +93,7 @@ def test_release_resources():
 # Test 7:Subprocess to get OS information.What if the subprocess fails? Like: if(t_pid sub==-1)
 
 
-
+#Test 8: A ideia é tentar criar ocilações, ou outliers, buscando não permitir o tratamento dos mesmos.
 '''
 Aqui está uma lista de títulos/exercícios para você praticar o desenvolvimento do código, organizados por nível de complexidade:
 📌 Nível Básico (Fundamentos)
