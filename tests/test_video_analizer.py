@@ -21,7 +21,7 @@ def test_should_accept_only_video_formats():
 
 
 #Test 2:
-def test_should_process_next_frame():#  caminho relativo abaixo porque damos make test a partir do TEcgraf folder.
+def test_should_process_next_frame():#  caminho relativo abaixo porque damos make test a partir do Tecgraf folder.
     video_analizer = VideoAnalyzer("test_data/videoplayback.mp4")  # Use a valid video file for testing
     frame = video_analizer.process_next_frame()
     assert frame is not None  # Ensure that a frame is returned,  so valid video was sent.

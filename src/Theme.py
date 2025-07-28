@@ -48,7 +48,6 @@ def is_system_dark(os_name):
                     )
             output = result.stdout.strip()
             if 'prefer-dark' in output:
-                print("a")
                 return True
         except Exception as e:
             print(f"Erro ao detectar tema do sistema: {e}")

@@ -1,5 +1,5 @@
 #main_window.py
-#Ziel: Erstellen ein zuerst Fenster für die Bike Fit Analyzer App und der Programmstart
+#Goal: Erstellen ein zuerst Fenster für die Bike Fit Analyzer App und der Programmstart
 import sys
 import cv2
 import numpy as np
@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QPixmap, QImage
 from PySide6.QtCore import QTimer, Qt
 from bike_fit_app.videoAnalyse import VideoAnalyzer
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox, QFileDialog 
 
 import Theme # Import the theme module to set dark or light mode
 from scipy.signal import savgol_filter # helps fix weird angles
@@ -32,13 +32,13 @@ class MainWindow(QWidget):
     def initUI(self):
         layout = QVBoxLayout()#Erstellen layout
 
-        #Label für Videoanzeige
+        #Label for VideoAnalyze
         self.label_video = QLabel("Nenhum vídeo carregado")
         self.label_video.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.label_video)
 
-        #Tastenlayout QH-> Horizontal
-        button_layout = QHBoxLayout()#Hinzufügen eines Layouts für die Tasten 
+        #ButtonLayout QH-> Horizontal
+        button_layout = QHBoxLayout()#Add a layout for the Button 
 
         #button load
         self.btn_load = QPushButton("📂 Carregar Vídeo")#
@@ -55,15 +55,13 @@ class MainWindow(QWidget):
 
 
     def load_video(self):
-        file_dialog = QFileDialog()
-        video_path, _ = file_dialog.getOpenFileName(self, "Selecione o vídeo", "", "Videos (*.mp4 *.avi *.mov *.mkv)")
+        video_path, _ = QFileDialog.getOpenFileName(self, "Selecione o vídeo", "", "Videos (*.mp4 *.avi *.mov *.mkv)")
 
         #Bug Solve: when new file is inserted it used to not start if the old was playing.
         if video_path:
             # 1. Parar o vídeo atual se estiver rodando
             if self.playing:
                 self.play_pause_video()  # Isso irá parar o timer
-
 
             # 2. Liberar recursos do vídeo anterior
             if self.video_analyzer:            
@@ -95,22 +93,25 @@ class MainWindow(QWidget):
             self.playing = False
             self.timer.stop()
 
-
+    '''
     def smooth_angles(self, angles):
-        """Add this new method"""
+        """Suaviza os ângulos usando filtro Savitzky-Golay"""
         if not angles or len(angles) < 5:
             return angles
-            
+
+        #used to be commented
         median = np.median(angles)
         mad = 1.4826 * np.median(np.abs(angles - median))
         cleaned = [x if abs(x - median) < 2.5*mad else median for x in angles]
-        
-        window_size = min(9, len(cleaned))
+        #used to be comented
+
+        angles = np.array(angles)  # Garante que é um array numpy
+        window_size = min(9, len(angles))
         if window_size % 2 == 0:
             window_size -= 1
             
-        return savgol_filter(cleaned, window_size, 2)
-
+        return savgol_filter(angles, window_size, 2).tolist()  # Retorna como lista
+    '''
    
     def update_frame(self):
         if not self.video_analyzer or not self.playing:  # Verificação adicional
@@ -130,33 +131,6 @@ class MainWindow(QWidget):
             qimg = QImage(frame.data, width, height, bytes_per_line, QImage.Format_RGB888)
             pixmap = QPixmap.fromImage(qimg).scaled(800, 450, Qt.KeepAspectRatio)
             self.label_video.setPixmap(pixmap)
-
-
-    def video_ended(self):
-        """Add this new method"""
-        self.timer.stop()
-        self.btn_load.setEnabled(True)
-        
-        if self.video_analyzer:
-            try:
-                knee_angles = self.smooth_angles(self.video_analyzer.angulos_joelho)
-                ankle_angles = self.smooth_angles(self.video_analyzer.angulos_tornozelo)
-                
-                # Conversão de imagem para o QLabel
-                height, width, channel = frame.shape
-                bytes_per_line = 3 * width
-                qimg = QImage(frame.data, width, height, bytes_per_line, QImage.Format_RGB888)
-                pixmap = QPixmap.fromImage(qimg).scaled(800, 450, Qt.KeepAspectRatio)
-                self.label_video.setPixmap(pixmap)
-                
-            except Exception as e:
-                QMessageBox.warning(self, "Processing Error", str(e))
-
-
-    def closeEvent(self, event):
-        if self.video_analyzer:
-            self.video_analyzer.release()
-        event.accept()
 
     
     #Ziehen Bild
@@ -183,25 +157,61 @@ class MainWindow(QWidget):
     def gerar_resultados(self):
         """Gera gráficos e PDF ao final do vídeo"""
         try:
-            from Graph import gerar_grafico
+            if not self.video_analyzer or len(self.video_analyzer.angulos_joelho) == 0:
+                raise ValueError("Nenhum dado de ângulo disponível para análise")
+
+            print(f"Total de frames processados - Joelho: {len(self.video_analyzer.angulos_joelho)}, Tornozelo: {len(self.video_analyzer.angulos_tornozelo)}")
+
+            # Converter para arrays numpy
+            ang_joelho = np.array(self.video_analyzer.angulos_joelho)
+            ang_tornozelo = np.array(self.video_analyzer.angulos_tornozelo)
+
+            '''
+            # Remover outliers
+            ang_j_filtrado = self.video_analyzer.remover_outliers(ang_j)
+            ang_t_filtrado = self.video_analyzer.remover_outliers(ang_t)
+            '''
+
+            # Suavizar
+            ang_j_suavizado = self.video_analyzer.suavizar_angulos(ang_joelho)
+            ang_t_suavizado = self.video_analyzer.suavizar_angulos(ang_tornozelo)
+
+            from bike_fit_app.Graph import gerar_grafico
             from PDF import gerar_pdf
-            
-            ang_joelho = self.smooth_angles(self.video_analyzer.angulos_joelho)
-            ang_tornozelo = self.smooth_angles(self.video_analyzer.angulos_tornozelo)
-            
+
             # Get the results from gerar_grafico which returns the proper structure
-            resultados = gerar_grafico(ang_joelho, ang_tornozelo)
-            
-            # Add video path to results
-            resultados['video'] = self.current_video_path
-            
-            gerar_pdf(resultados)
+            #    necessário tratar os ângulos. Obtemos a media
+            joelho_angs_media    = np.mean(ang_j_suavizado)
+            tornozelo_angs_media = np.mean(ang_t_suavizado)
+            #    para conseguir dizer o filtro.
+            joelho_angs_limite    = 0.6 * joelho_angs_media
+            tornozelo_angs_limite = 0.6 * tornozelo_angs_media
+            #    E obtemos os angulos que estão acima do limite
+            vAngulos_joelho_Maximos    = ang_j_suavizado[ang_j_suavizado > joelho_angs_limite]
+            vAngulos_tornozelo_Maximos = ang_t_suavizado[ang_t_suavizado > tornozelo_angs_limite]
+
+            #Debug pós filtro, logo, a quantidade de angulos que sobraram.
+            print(f"Angulos Joelho:    {len(ang_j_suavizado)}, {len(vAngulos_joelho_Maximos)}   ")
+            for i in vAngulos_joelho_Maximos:
+                print(f"{i:.2f}", end=", ")
+            #ao inves do for passa o vetor logo
+            print(f"angulos originais: {ang_j_suavizado}")
+            print(f"angulos maximos: {vAngulos_joelho_Maximos}")
+
+            print(f"Angulos Tornozelo: {len(ang_t_suavizado)}, {len(vAngulos_tornozelo_Maximos)}")
+
+            # As 3 linhas abaixo fazem o que ?
+            resultados = gerar_grafico(vAngulos_joelho_Maximos, vAngulos_tornozelo_Maximos)#isso adquire os resultados.
+            resultados['video'] = self.current_video_path #Adiciona ao dicionário de resultados o caminho do vídeo que foi analisado | Isso será usado no PDF para referência 
+            gerar_pdf(resultados) #Chama a função gerar_grafico passando os ângulos máximos filtrados do joelho e tornozelo
 
             self.label_video.setText("Análise concluída!")
             self.draw_image()
             
         except Exception as e:
-            QMessageBox.warning(self, "Aviso", f"Erro ao gerar resultados:\n{str(e)}")
+            import traceback
+            traceback.print_exc()  # Isso mostrará o traceback completo no console
+            QMessageBox.critical(self, "Erro", f"Falha ao gerar resultados: {str(e)}")
 
 
 if __name__ == "__main__":

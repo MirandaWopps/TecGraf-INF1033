@@ -11,7 +11,7 @@ class VideoAnalyzer:
 
     Args:
         video_path: String with the path to the video file.
-
+askaasd
     Returns:
         All the functions... All these comments shall be to the functions.
     """
@@ -59,18 +59,28 @@ class VideoAnalyzer:
                 calcanhar = [landmarks[self.mp_pose.PoseLandmark.RIGHT_HEEL.value].x,
                              landmarks[self.mp_pose.PoseLandmark.RIGHT_HEEL.value].y]
 
-                angulo_joelho = self.calcular_angulo(quadril, joelho, tornozelo)
+
+                angulo_joelho    = self.calcular_angulo(quadril, joelho, tornozelo)
                 angulo_tornozelo = self.calcular_angulo(joelho, tornozelo, calcanhar)
+
+
+                # VOCÊ PRECISA TRATAR OS ANGULOS QUE ESTÃO ENTRANDO
+                # SÓ DEIXA ENTRAR QUEM FOR 50% PARA CIMA, E ENTÃO, FILTRAMOS OS ANGULOS !!!!!!                
+
+                #Filtro ! !!! ESTÁ SENDO FEITO EM VIDEO ANALYSE PORQUE 
+                # precisamos de todos os ângul,os para sabermos o que é máximo e o que é min.
 
                 self.angulos_joelho.append(angulo_joelho)
                 self.angulos_tornozelo.append(angulo_tornozelo)
 
+ 
+                # Mostre os ângulos atuais no frame
                 cv2.putText(frame, f'Joelho: {int(angulo_joelho)}', (10, 50),
                             cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
                 cv2.putText(frame, f'Tornozelo: {int(angulo_tornozelo)}', (10, 80),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-            except:#Exception treatment
-                pass
+            except Exception as e:
+                print(f"Erro ao calcular ângulos: {e}")
 
         return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
@@ -82,26 +92,32 @@ class VideoAnalyzer:
             window_size -= 1
         return savgol_filter(angulos, window_size, 2)  # Polinômio de ordem 2
 
-
+    '''
     # Adicione no videoAnalyse.py
     def remover_outliers(self, angulos, threshold=2.5):
         """Remove valores que desviam muito da média"""
-        if not angulos:
+        if not angulos or len(angulos) == 0:
             return angulos
-            
-        median = np.median(angulos)
-        mad = 1.4826 * np.median(np.abs(angulos - median))  # Desvio absoluto mediano
-        
-        # Substitui outliers pela mediana
-        return [x if (abs(x - median) < threshold * mad) else median for x in angulos]
 
+        angulos = np.array(angulos)  # Garante que é um array numpy            
+        median  = np.median(angulos)
+        mad = 1.4826 * np.median(np.abs(angulos - median) ) # Desvio absoluto mediano
+        
+        # Cria máscara booleana para filtragem
+        mask = np.abs(angulos - median) < threshold * mad
+
+        # Filtra os valores usando a máscara
+        return angulos[mask].tolist()  # Retorna como lista
+    '''
+    
 
     def calcular_angulo(self, a, b, c):
-        a, b, c = np.array(a), np.array(b), np.array(c)
-        ba, bc = a - b, c - b
+        a, b, c = np.array(a), np.array(b), np.array(c)#estamos garantindo que são arrays numpy
+        ba, bc = a - b, c - b# adquire os vetores ba e bc. Estamos fazendo subtração de vetores numpy.
         cos_angulo = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
         angulo = np.degrees(np.arccos(np.clip(cos_angulo, -1.0, 1.0)))
         return angulo
 
+#Usada em 'main_window.py' para liberar recursos do vídeo anterior.
     def release(self):
         self.cap.release()
