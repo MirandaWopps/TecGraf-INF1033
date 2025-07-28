@@ -183,17 +183,27 @@ class MainWindow(QWidget):
             #    necessário tratar os ângulos. Obtemos a media
             joelho_angs_media    = np.mean(ang_j_suavizado)
             tornozelo_angs_media = np.mean(ang_t_suavizado)
+
+            print(f"joelho_angs_media: {joelho_angs_media:.2f}, tornozelo_angs_media: {tornozelo_angs_media:.2f}")
             #    para conseguir dizer o filtro.
-            joelho_angs_limite    = 0.6 * joelho_angs_media
+            interval_joelho = np.max(ang_j_suavizado) - np.min(ang_j_suavizado)
+            print(f"Intervalo Joelho: {interval_joelho:.2f}")
+            joelho_angs_limite = joelho_angs_media + interval_joelho * 0.1
+            
             tornozelo_angs_limite = 0.6 * tornozelo_angs_media
+
+            print(f"joelho_angs_limite: {joelho_angs_limite:.2f}, tornozelo_angs_limite: {tornozelo_angs_limite:.2f}")
             #    E obtemos os angulos que estão acima do limite
             vAngulos_joelho_Maximos    = ang_j_suavizado[ang_j_suavizado > joelho_angs_limite]
             vAngulos_tornozelo_Maximos = ang_t_suavizado[ang_t_suavizado > tornozelo_angs_limite]
 
             #Debug pós filtro, logo, a quantidade de angulos que sobraram.
             print(f"Angulos Joelho:    {len(ang_j_suavizado)}, {len(vAngulos_joelho_Maximos)}   ")
-            for i in vAngulos_joelho_Maximos:
-                print(f"{i:.2f}", end=", ")
+
+            for i, angulo in enumerate(ang_j_suavizado):
+                ang_maximo = vAngulos_joelho_Maximos[i] if i < len(vAngulos_joelho_Maximos) else float('nan')
+                print(f"Original = {angulo:.2f}, Ang Máximo: {ang_maximo:.2f}")
+
             #ao inves do for passa o vetor logo
             print(f"angulos originais: {ang_j_suavizado}")
             print(f"angulos maximos: {vAngulos_joelho_Maximos}")
