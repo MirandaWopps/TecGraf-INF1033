@@ -136,6 +136,38 @@ class MainWindow(QWidget):
         except Exception as e:
             self.label_video.setText(f"Error loading image:\n{str(e)}")
     
+
+    def descobreMaximos(self, vetor, altura_minima=140, distancia_minima=10):
+        """
+        Encontra os máximos locais em um vetor de ângulos.
+        
+        Args:
+            vetor: Lista ou array de valores de ângulos
+            altura_minima: Valor mínimo para considerar um pico
+            distancia_minima: Distância mínima entre picos consecutivos
+        
+        Returns:
+            Lista com os valores dos máximos locais
+        """
+        if len(vetor) < 3:
+            return []
+        
+        maximos = []
+        n = len(vetor)
+        
+        # Para cada ponto (exceto as bordas)
+        for i in range(1, n-1):
+            # Verifica se é um máximo local (valor maior que vizinhos)
+            if vetor[i] > vetor[i-1] and vetor[i] > vetor[i+1]:
+                # Verifica se atinge a altura mínima
+                if vetor[i] >= altura_minima:
+                    # Verifica distância do último pico encontrado
+                    if not maximos or (i - len(maximos) >= distancia_minima):
+                        maximos.append(vetor[i])
+        
+        return maximos
+
+
     
     def gerar_resultados(self):
         """Gera gráficos e PDF ao final do vídeo"""
@@ -148,8 +180,7 @@ class MainWindow(QWidget):
             ang_joelho = np.array(self.video_analyzer.angulos_joelho)
             ang_tornozelo = np.array(self.video_analyzer.angulos_tornozelo)
 
-            # Voce precisa da média dos máximos locais !
-            # Índices e propriedades
+            # Encontrar máximos locais usando scipy
             indices_joelho, props_joelho = find_peaks(ang_joelho, height=155, distance=10)
             indices_tornozelo, props_tornozelo = find_peaks(ang_tornozelo, height=140, distance=10)
 
@@ -157,41 +188,52 @@ class MainWindow(QWidget):
             vJoelhoMaximosLocais = ang_joelho[indices_joelho]
             vTornozeloMaximosLocais = ang_tornozelo[indices_tornozelo]
 
-
-            # Você precisa dizer ao usuário, de alguma forma, para descer(media > 155) ou subir(media < 140) o banco.
-            # A média está vindo lá em gera graph. Use ela para responder ao usuário.
+            # Se não encontrar picos com scipy, usar nossa função personalizada
+            if len(vJoelhoMaximosLocais) == 0:
+                vJoelhoMaximosLocais = np.array(self.descobreMaximos(ang_joelho, 155, 10))
             
+            if len(vTornozeloMaximosLocais) == 0:
+                vTornozeloMaximosLocais = np.array(self.descobreMaximos(ang_tornozelo, 140, 10))
 
-            # Escolher dados para plotar
-            if len(vJoelhoMaximosLocais) > 0 and len(vTornozeloMaximosLocais) > 0:
+            print(f"Máximos Joelho encontrados: {len(vJoelhoMaximosLocais)}")
+            print(f"Máximos Tornozelo encontrados: {len(vTornozeloMaximosLocais)}")
+
+            # Escolher dados para plotar - usar apenas os máximos do joelho
+            if len(vJoelhoMaximosLocais) > 0:
                 dados_joelho = vJoelhoMaximosLocais
-                dados_tornozelo = vTornozeloMaximosLocais
-                print("Usando picos máximos locais para análise.")
+                dados_tornozelo = vTornozeloMaximosLocais if len(vTornozeloMaximosLocais) > 0 else ang_tornozelo
+                print("Usando apenas os ângulos máximos do joelho para análise.")
             else:
+                # Se não encontrar máximos, usar todos os dados
                 dados_joelho = ang_joelho
                 dados_tornozelo = ang_tornozelo
                 print("Aviso: Nenhum pico detectado, usando todos os dados.")
-
-
-            #shall i 
-
 
             # Gerar gráfico
             gerar_grafico(dados_joelho, dados_tornozelo)
 
             # ---- Recomendação de ajuste do banco ----
-            media_joelho = np.mean(dados_joelho)
-            media_tornozelo = np.mean(dados_tornozelo)
-            recomendacao = ""
-            if media_joelho > 155:
-                recomendacao += "O banco parece alto demais, considere descer um pouco.\n"
-            elif media_joelho < 140:
-                recomendacao += "O banco parece baixo demais, considere subir um pouco.\n"
+            if len(dados_joelho) > 0:
+                media_joelho = np.mean(dados_joelho)
+                recomendacao = ""
+                
+                if media_joelho > 155:
+                    recomendacao += "🔻 O banco parece ALTO demais. Considere DESCER aproximadamente 1-2 cm.\n"
+                elif media_joelho < 140:
+                    recomendacao += "🔺 O banco parece BAIXO demais. Considiere SUBIR aproximadamente 1-2 cm.\n"
+                else:
+                    recomendacao += "✅ A altura do banco está ADEQUADA (140°-155°).\n"
+                
+                # Adicionar informação sobre a média
+                recomendacao += f"\n📊 Média dos ângulos máximos do joelho: {media_joelho:.1f}°"
+                
+                print(f"Média Joelho: {media_joelho:.2f}°")
+                print(recomendacao)
+                
+                # Mostrar recomendação para o usuário
+                QMessageBox.information(self, "Recomendação de Ajuste", recomendacao)
             else:
-                recomendacao += "A altura do banco está adequada.\n"
-
-            print(f"Média Joelho: {media_joelho:.2f}° | Média Tornozelo: {media_tornozelo:.2f}°")
-            print(recomendacao)
+                print("Aviso: Não foi possível calcular média dos ângulos do joelho")
         
             self.draw_image()
             

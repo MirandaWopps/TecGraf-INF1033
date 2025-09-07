@@ -21,6 +21,7 @@ def calcular_mediana_intervalo(valores, limite_superior, limite_inferior):
         return (valores_intervalo[n // 2 - 1] + valores_intervalo[n // 2]) / 2
 
 
+
 #Funcao resposnavel por gerar o grafico a partir dos angulos recebidos. "main_window.py" faz o tratamento para obter os máximos locais.
 def gerar_grafico(angulos_joelho, angulos_tornozelo, caminho_saida='report/grafico.png'):#esse caminho de saida
     #angulos_joelho    = np.array(angulos_joelho)                                          deixará o gráfico no
